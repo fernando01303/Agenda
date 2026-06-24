@@ -57,7 +57,7 @@ export function DashboardScreen() {
         <Text style={[styles.taskTitle, { color: colors.text }, item.isCompleted && { textDecorationLine: 'line-through', color: colors.textSecondary }]}>
           {item.title}
         </Text>
-        <Text style={[styles.taskTime, { color: colors.textSecondary }]}>{item.date} às {item.time}</Text>
+        <Text style={[styles.taskTime, { color: colors.textSecondary }]}>{item.date.split('-').reverse().join('/')} às {item.time}</Text>
         {item.description ? <Text style={[styles.taskDesc, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
         <View style={[styles.categoryBadge, { backgroundColor: item.color + '20' }]}>
            <Text style={[styles.categoryText, { color: item.color }]}>{item.category}</Text>
@@ -75,7 +75,6 @@ export function DashboardScreen() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.textSecondary }]}>Olá,</Text>
           <Text style={[styles.title, { color: colors.text }]}>Sua Agenda</Text>
         </View>
 

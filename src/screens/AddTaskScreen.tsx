@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 import { addTask } from '../database/storage';
 import { scheduleTaskNotification } from '../utils/notifications';
 import { useTheme } from '../context/ThemeContext';
@@ -17,8 +18,25 @@ export function AddTaskScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState(0);
   const [category, setCategory] = useState('Trabalho');
   const [color, setColor] = useState('#3b82f6');
+
+  const reminderOptions = [
+    { label: 'Na hora exata', value: 0 },
+    { label: '5 minutos antes', value: 5 },
+    { label: '10 minutos antes', value: 10 },
+    { label: '15 minutos antes', value: 15 },
+    { label: '20 minutos antes', value: 20 },
+    { label: '25 minutos antes', value: 25 },
+    { label: '30 minutos antes', value: 30 },
+    { label: '35 minutos antes', value: 35 },
+    { label: '40 minutos antes', value: 40 },
+    { label: '45 minutos antes', value: 45 },
+    { label: '50 minutos antes', value: 50 },
+    { label: '55 minutos antes', value: 55 },
+    { label: '60 minutos antes (1 hora)', value: 60 },
+  ];
 
   const categories = [
     { name: 'Trabalho', color: '#3b82f6' }, // blue
@@ -52,7 +70,6 @@ export function AddTaskScreen() {
       return;
     }
 
-    // Validar se a data e hora escolhida é no passado
     const now = new Date();
     now.setSeconds(0, 0);
     
@@ -64,7 +81,10 @@ export function AddTaskScreen() {
       return;
     }
 
-    const dateStr = dateObj.toISOString().split('T')[0];
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
     const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     try {
@@ -75,8 +95,9 @@ export function AddTaskScreen() {
         time: timeStr,
         category,
         color,
+        reminderMinutesBefore,
       });
-      await scheduleTaskNotification(title, description || 'Lembrete da sua tarefa!', dateStr, timeStr);
+      await scheduleTaskNotification(title, description, dateStr, timeStr, reminderMinutesBefore);
       navigation.goBack();
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível salvar a tarefa.');
@@ -164,6 +185,27 @@ export function AddTaskScreen() {
           </View>
 
           <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.text }]}>Alarme / Lembrete</Text>
+            <View style={[styles.pickerContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Picker
+                selectedValue={reminderMinutesBefore}
+                onValueChange={(itemValue) => setReminderMinutesBefore(itemValue)}
+                style={{ color: colors.text }}
+                dropdownIconColor={colors.text}
+              >
+                {reminderOptions.map(opt => (
+                  <Picker.Item 
+                    key={opt.value} 
+                    label={opt.label} 
+                    value={opt.value} 
+                    color={isDarkMode ? '#ffffff' : '#000000'} 
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={[styles.label, { color: colors.text }]}>Categoria</Text>
             <View style={styles.categoriesContainer}>
               {categories.map((cat) => (
@@ -206,7 +248,6 @@ export function AddTaskScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#ffffff',
   },
   container: {
     flex: 1,
@@ -221,11 +262,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: '800',
-    color: '#0f172a',
   },
   subtitle: {
     fontSize: 16,
-    color: '#64748b',
     marginTop: 4,
   },
   inputGroup: {
@@ -234,13 +273,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#334155',
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f8fafc',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -249,13 +285,19 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 16,
-    color: '#1e293b',
   },
   textArea: {
     height: 100,
   },
   row: {
     flexDirection: 'row',
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 52,
+    overflow: 'hidden',
   },
   categoriesContainer: {
     flexDirection: 'row',
@@ -267,26 +309,21 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
     marginBottom: 10,
     marginRight: 10,
   },
   categoryChipText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#64748b',
   },
   categoryChipTextSelected: {
     color: '#ffffff',
   },
   saveButton: {
-    backgroundColor: '#0f172a',
     borderRadius: 14,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 20,
-    shadowColor: '#0f172a',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

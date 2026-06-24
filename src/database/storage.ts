@@ -10,6 +10,7 @@ export interface Task {
   category: string;
   color: string;
   isCompleted: boolean;
+  reminderMinutesBefore?: number;
 }
 
 const TASKS_STORAGE_KEY = '@agenda_tasks';
